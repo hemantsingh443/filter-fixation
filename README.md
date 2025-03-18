@@ -1,69 +1,53 @@
-# Welcome to your Lovable project
+# Filter Fixation
 
-## Project info
+A powerful image processing web application built with Streamlit that allows users to apply various filters and effects to their images.
 
-**URL**: https://lovable.dev/projects/4ba0fe29-1889-4e1b-aaa0-641ebcda14fd
+## Features
 
-## How can I edit this code?
+- Basic image adjustments (brightness, contrast, saturation, sharpness, blur)
+- Advanced filters (sepia, vignette, grayscale, invert, edge enhance, emboss, posterize)
+- Image editing (rotation, flipping, cropping)
+- Export options with compression and resizing
+- Real-time preview
+- Multiple export formats (JPEG, PNG, BMP, WebP)
 
-There are several ways of editing your application.
+## Setup
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/4ba0fe29-1889-4e1b-aaa0-641ebcda14fd) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/filter-fixation.git
+cd filter-fixation
 ```
 
-**Edit a file directly in GitHub**
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-**Use GitHub Codespaces**
+4. Run the application:
+```bash
+streamlit run app.py
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Usage
 
-## What technologies are used for this project?
+1. Upload an image using the sidebar
+2. Use the tabs to access different editing features:
+   - Basic Filters: Adjust brightness, contrast, saturation, etc.
+   - Advanced Filters: Apply special effects like sepia, vignette, etc.
+   - Image Editing: Rotate, flip, or crop the image
+   - Export: Compress, resize, and download the processed image
 
-This project is built with .
+## Live Demo
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Visit [Streamlit Cloud](https://your-app-url.streamlit.app) to try the application.
 
-## How can I deploy this project?
+## License
 
-Simply open [Lovable](https://lovable.dev/projects/4ba0fe29-1889-4e1b-aaa0-641ebcda14fd) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+MIT License
