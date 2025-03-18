@@ -12,7 +12,9 @@ import {
   Check,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Crop as CropIcon,
+  FileDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -20,8 +22,18 @@ import { Separator } from '@/components/ui/separator';
 import ImageFilterPreview from '@/components/ImageFilterPreview';
 import FilterSlider from '@/components/FilterSlider';
 import FilterPreset from '@/components/FilterPreset';
+import ImageCropper from '@/components/ImageCropper';
+import ImageCompressor from '@/components/ImageCompressor';
 import { FILTER_PRESETS } from '@/data/filterPresets';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const Index = () => {
   const { toast } = useToast();
@@ -30,7 +42,11 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeFilterSet, setActiveFilterSet] = useState('basic');
   const [currentPreset, setCurrentPreset] = useState<string | null>(null);
+  const [editingMode, setEditingMode] = useState<'filter' | 'crop' | 'compress' | null>('filter');
   const imageInputRef = useRef<HTMLInputElement>(null);
+  
+  // Track compression stats
+  const [compressionRatio, setCompressionRatio] = useState<number | null>(null);
   
   const [filters, setFilters] = useState({
     brightness: 100,
@@ -56,6 +72,7 @@ const Index = () => {
           setOriginalImage(imageDataUrl);
           resetFilters();
           setCurrentPreset(null);
+          setCompressionRatio(null);
           
           toast({
             title: "Image uploaded successfully",
@@ -166,12 +183,36 @@ const Index = () => {
     if (originalImage) {
       setImage(originalImage);
       resetFilters();
+      setCompressionRatio(null);
       
       toast({
         title: "Reverted to original",
         description: "Your image has been restored to its original state",
       });
     }
+  };
+
+  // Handle crop completion
+  const handleCropComplete = (croppedImageUrl: string) => {
+    setImage(croppedImageUrl);
+    setEditingMode('filter');
+    
+    toast({
+      title: "Image cropped",
+      description: "Your image has been cropped successfully",
+    });
+  };
+
+  // Handle compression completion
+  const handleCompressionComplete = (compressedImageUrl: string, ratio: number) => {
+    setImage(compressedImageUrl);
+    setCompressionRatio(ratio);
+    setEditingMode('filter');
+    
+    toast({
+      title: "Image compressed",
+      description: `Reduced to ${ratio.toFixed(1)}% of original size`,
+    });
   };
 
   return (
@@ -260,14 +301,46 @@ const Index = () => {
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 className="relative max-w-full max-h-full flex items-center justify-center"
               >
-                <div className="relative rounded-lg overflow-hidden shadow-lg transition-all duration-500">
-                  <img
-                    src={image}
-                    alt="Uploaded"
-                    style={{ filter: getFilterString() }}
-                    className="max-h-[70vh] object-contain transition-all duration-300"
-                  />
-                </div>
+                {editingMode === 'filter' && (
+                  <div className="relative rounded-lg overflow-hidden shadow-lg transition-all duration-500">
+                    <img
+                      src={image}
+                      alt="Uploaded"
+                      style={{ filter: getFilterString() }}
+                      className="max-h-[70vh] object-contain transition-all duration-300"
+                    />
+                    
+                    {compressionRatio !== null && (
+                      <div className="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-full">
+                        Compressed: {compressionRatio.toFixed(1)}%
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {editingMode === 'crop' && image && (
+                  <Sheet defaultOpen={true} onOpenChange={(open) => !open && setEditingMode('filter')}>
+                    <SheetContent side="bottom" className="h-[80vh]">
+                      <ImageCropper 
+                        imageUrl={image} 
+                        onCropComplete={handleCropComplete}
+                        onCancel={() => setEditingMode('filter')}
+                      />
+                    </SheetContent>
+                  </Sheet>
+                )}
+                
+                {editingMode === 'compress' && image && (
+                  <Sheet defaultOpen={true} onOpenChange={(open) => !open && setEditingMode('filter')}>
+                    <SheetContent side="bottom" className="h-[80vh]">
+                      <ImageCompressor 
+                        imageUrl={image} 
+                        onCompressionComplete={handleCompressionComplete}
+                        onCancel={() => setEditingMode('filter')}
+                      />
+                    </SheetContent>
+                  </Sheet>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -309,130 +382,167 @@ const Index = () => {
         >
           {image && (
             <div className="p-4">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Filter Presets</h3>
-              <div className="flex overflow-x-auto pb-4 space-x-3 scrollbar-hide">
-                {FILTER_PRESETS.map((preset) => (
-                  <FilterPreset
-                    key={preset.id}
-                    preset={preset}
-                    isActive={currentPreset === preset.id}
-                    onClick={() => applyPreset(preset.id)}
-                  />
-                ))}
+              {/* Edit Mode Selector */}
+              <div className="mb-6">
+                <h3 className="text-lg font-medium text-gray-800 mb-4">Edit Tools</h3>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant={editingMode === 'filter' ? "default" : "outline"}
+                    className="flex flex-col items-center justify-center py-3 h-auto"
+                    onClick={() => setEditingMode('filter')}
+                  >
+                    <Sliders className="h-5 w-5 mb-1" />
+                    <span className="text-xs">Filters</span>
+                  </Button>
+                  <Button
+                    variant={editingMode === 'crop' ? "default" : "outline"}
+                    className="flex flex-col items-center justify-center py-3 h-auto"
+                    onClick={() => setEditingMode('crop')}
+                  >
+                    <CropIcon className="h-5 w-5 mb-1" />
+                    <span className="text-xs">Crop</span>
+                  </Button>
+                  <Button
+                    variant={editingMode === 'compress' ? "default" : "outline"}
+                    className="flex flex-col items-center justify-center py-3 h-auto"
+                    onClick={() => setEditingMode('compress')}
+                  >
+                    <FileDown className="h-5 w-5 mb-1" />
+                    <span className="text-xs">Compress</span>
+                  </Button>
+                </div>
               </div>
               
               <Separator className="my-4" />
               
-              <div className="mt-6">
-                <Tabs defaultValue="basic" onValueChange={setActiveFilterSet}>
-                  <TabsList className="w-full mb-4">
-                    <TabsTrigger value="basic" className="flex-1">Basic</TabsTrigger>
-                    <TabsTrigger value="advanced" className="flex-1">Advanced</TabsTrigger>
-                  </TabsList>
+              {editingMode === 'filter' && (
+                <>
+                  <h3 className="text-lg font-medium text-gray-800 mb-4">Filter Presets</h3>
+                  <div className="flex overflow-x-auto pb-4 space-x-3 scrollbar-hide">
+                    {FILTER_PRESETS.map((preset) => (
+                      <FilterPreset
+                        key={preset.id}
+                        preset={preset}
+                        isActive={currentPreset === preset.id}
+                        onClick={() => applyPreset(preset.id)}
+                      />
+                    ))}
+                  </div>
                   
-                  <TabsContent value="basic">
-                    <div className="space-y-6">
-                      <FilterSlider
-                        label="Brightness"
-                        value={[filters.brightness]}
-                        min={0}
-                        max={200}
-                        step={1}
-                        onChange={(value) => setFilters({ ...filters, brightness: value[0] })}
-                      />
+                  <Separator className="my-4" />
+                  
+                  <div className="mt-6">
+                    <Tabs defaultValue="basic" onValueChange={setActiveFilterSet}>
+                      <TabsList className="w-full mb-4">
+                        <TabsTrigger value="basic" className="flex-1">Basic</TabsTrigger>
+                        <TabsTrigger value="advanced" className="flex-1">Advanced</TabsTrigger>
+                      </TabsList>
                       
-                      <FilterSlider
-                        label="Contrast"
-                        value={[filters.contrast]}
-                        min={0}
-                        max={200}
-                        step={1}
-                        onChange={(value) => setFilters({ ...filters, contrast: value[0] })}
-                      />
+                      <TabsContent value="basic">
+                        <div className="space-y-6">
+                          <FilterSlider
+                            label="Brightness"
+                            value={[filters.brightness]}
+                            min={0}
+                            max={200}
+                            step={1}
+                            onChange={(value) => setFilters({ ...filters, brightness: value[0] })}
+                          />
+                          
+                          <FilterSlider
+                            label="Contrast"
+                            value={[filters.contrast]}
+                            min={0}
+                            max={200}
+                            step={1}
+                            onChange={(value) => setFilters({ ...filters, contrast: value[0] })}
+                          />
+                          
+                          <FilterSlider
+                            label="Saturation"
+                            value={[filters.saturation]}
+                            min={0}
+                            max={200}
+                            step={1}
+                            onChange={(value) => setFilters({ ...filters, saturation: value[0] })}
+                          />
+                          
+                          <FilterSlider
+                            label="Grayscale"
+                            value={[filters.grayscale]}
+                            min={0}
+                            max={100}
+                            step={1}
+                            onChange={(value) => setFilters({ ...filters, grayscale: value[0] })}
+                          />
+                        </div>
+                      </TabsContent>
                       
-                      <FilterSlider
-                        label="Saturation"
-                        value={[filters.saturation]}
-                        min={0}
-                        max={200}
-                        step={1}
-                        onChange={(value) => setFilters({ ...filters, saturation: value[0] })}
-                      />
+                      <TabsContent value="advanced">
+                        <div className="space-y-6">
+                          <FilterSlider
+                            label="Sepia"
+                            value={[filters.sepia]}
+                            min={0}
+                            max={100}
+                            step={1}
+                            onChange={(value) => setFilters({ ...filters, sepia: value[0] })}
+                          />
+                          
+                          <FilterSlider
+                            label="Hue Rotate"
+                            value={[filters.hueRotate]}
+                            min={0}
+                            max={360}
+                            step={1}
+                            onChange={(value) => setFilters({ ...filters, hueRotate: value[0] })}
+                          />
+                          
+                          <FilterSlider
+                            label="Blur"
+                            value={[filters.blur]}
+                            min={0}
+                            max={20}
+                            step={0.1}
+                            onChange={(value) => setFilters({ ...filters, blur: value[0] })}
+                          />
+                          
+                          <FilterSlider
+                            label="Invert"
+                            value={[filters.invert]}
+                            min={0}
+                            max={100}
+                            step={1}
+                            onChange={(value) => setFilters({ ...filters, invert: value[0] })}
+                          />
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                    
+                    <div className="mt-8 flex justify-between">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={resetFilters}
+                        className="flex items-center"
+                      >
+                        <RefreshCcw className="mr-2 h-3 w-3" />
+                        Reset Filters
+                      </Button>
                       
-                      <FilterSlider
-                        label="Grayscale"
-                        value={[filters.grayscale]}
-                        min={0}
-                        max={100}
-                        step={1}
-                        onChange={(value) => setFilters({ ...filters, grayscale: value[0] })}
-                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={downloadImage}
+                        className="flex items-center"
+                      >
+                        <Download className="mr-2 h-3 w-3" />
+                        Save Image
+                      </Button>
                     </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="advanced">
-                    <div className="space-y-6">
-                      <FilterSlider
-                        label="Sepia"
-                        value={[filters.sepia]}
-                        min={0}
-                        max={100}
-                        step={1}
-                        onChange={(value) => setFilters({ ...filters, sepia: value[0] })}
-                      />
-                      
-                      <FilterSlider
-                        label="Hue Rotate"
-                        value={[filters.hueRotate]}
-                        min={0}
-                        max={360}
-                        step={1}
-                        onChange={(value) => setFilters({ ...filters, hueRotate: value[0] })}
-                      />
-                      
-                      <FilterSlider
-                        label="Blur"
-                        value={[filters.blur]}
-                        min={0}
-                        max={20}
-                        step={0.1}
-                        onChange={(value) => setFilters({ ...filters, blur: value[0] })}
-                      />
-                      
-                      <FilterSlider
-                        label="Invert"
-                        value={[filters.invert]}
-                        min={0}
-                        max={100}
-                        step={1}
-                        onChange={(value) => setFilters({ ...filters, invert: value[0] })}
-                      />
-                    </div>
-                  </TabsContent>
-                </Tabs>
-                
-                <div className="mt-8 flex justify-between">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={resetFilters}
-                    className="flex items-center"
-                  >
-                    <RefreshCcw className="mr-2 h-3 w-3" />
-                    Reset Filters
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={downloadImage}
-                    className="flex items-center"
-                  >
-                    <Download className="mr-2 h-3 w-3" />
-                    Save Image
-                  </Button>
-                </div>
-              </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </motion.div>
