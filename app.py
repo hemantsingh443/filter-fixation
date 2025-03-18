@@ -158,18 +158,7 @@ with st.sidebar:
 
 # Main content
 if uploaded_file is not None:
-    # Display original and processed images first
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("Original Image")
-        st.image(st.session_state.image, use_column_width=True)
-    
-    with col2:
-        st.subheader("Processed Image")
-        st.image(st.session_state.edited_image, use_column_width=True)
-    
-    # Create tabs for different editing modes below images
+    # Create tabs for different editing modes
     tabs = st.tabs(["Basic Filters", "Advanced Filters", "Image Editing", "Export"])
     
     # Basic Filters Tab
@@ -383,7 +372,18 @@ if uploaded_file is not None:
                 st.write(f"Original Size: {original_size / 1024:.2f} KB")
                 st.write(f"Processed Size: {processed_size / 1024:.2f} KB")
                 st.write(f"Size Reduction: {reduction:.1f}%")
+    
+    # Display original and processed images
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Original Image")
+        st.image(st.session_state.image, use_column_width=True)
+    
+    with col2:
+        st.subheader("Processed Image")
+        st.image(st.session_state.edited_image, use_column_width=True)
 
 # Footer
 st.markdown("---")
-st.markdown("Made with ❤️ using Streamlit") 
+st.markdown("Made with ❤️ using Streamlit")
