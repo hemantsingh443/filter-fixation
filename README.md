@@ -46,7 +46,7 @@ streamlit run app.py
 
 ## Live Demo
 
-Visit [Streamlit Cloud](https://your-app-url.streamlit.app) to try the application.
+Visit (https://filterfixation.streamlit.app/) to try the application.
 
 ## License
 
